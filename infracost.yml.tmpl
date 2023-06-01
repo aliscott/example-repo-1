@@ -1,0 +1,18 @@
+version: 0.1
+projects:
+{{- range $match := matchPaths ":stack/:region/:env.tfvars" }}
+  {{- $sharedRegionVarFile := printf "shared-%s.tfvars" $match.region }}
+  {{- $sharedEnvVarFile := printf "shared-%s.tfvars" $match.env }}
+  {{- if not (startsWith $match._path ".") }}
+  - name: {{ $match.stack }}-{{ $match.region }}-{{ $match.env }}
+    path: {{ $match._dir }}
+    terraform_var_files:
+      - {{ base $match._path }}
+      {{- if pathExists "." $sharedRegionVarFile }}
+      - ../../{{ $sharedRegionVarFile }}
+      {{- end }}
+      {{- if pathExists "." $sharedEnvVarFile }}
+      - ../../{{ $sharedEnvVarFile }}
+      {{- end }}
+  {{- end }}
+{{- end }}

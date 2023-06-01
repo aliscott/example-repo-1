@@ -1,2 +1,2 @@
 # Example configuration file
-api_instance_type = "t2.micro"
+api_instance_type = "t3.small"

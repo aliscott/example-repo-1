@@ -1,0 +1,16 @@
+version: 0.1
+projects:
+{{- range $match := matchPaths ":stack([\\-\\w]+)/:region([\\-\\w]+)/:env([\\-\\w]+).tfvars" }}
+  {{- $globalRegionVarFile := printf "global-%s.tfvars" $match.region }}
+  {{- $globalEnvVarFile := printf "global-%s.tfvars" $match.env }}
+  - name: {{ $match.stack }}-{{ $match.region }}-{{ $match.env }}
+    path: {{ $match._dir }}
+    terraform_var_files:
+      - {{ base $match._path }}
+      {{- if pathExists "." $globalRegionVarFile }}
+      - ../../{{ $globalRegionVarFile }}
+      {{- end }}
+      {{- if pathExists "." $globalEnvVarFile }}
+      - ../../{{ $globalEnvVarFile }}
+      {{- end }}
+{{- end }}

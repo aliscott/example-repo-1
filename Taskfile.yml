@@ -1,0 +1,44 @@
+version: '3'
+
+vars:
+  ROOT_DIR:
+    sh: pwd
+  TMP_DIR: '{{.ROOT_DIR}}/.tmp'
+
+tasks:
+  # Clone and checkout the main branch of this repo to the temp directory
+  checkout-main:
+    internal: true
+    cmds:
+      - mkdir -p {{.TMP_DIR}}/base
+      - git clone --single-branch --branch=main . {{.TMP_DIR}}/base
+
+  # Estimate the main branch costs
+  estimate:main:
+    internal: true
+    dir: '{{.TMP_DIR}}/base'
+    cmds:
+      # Generate an Infracost config file for the main branch
+      # based on the infracost.yml.tmpl file
+      - infracost generate config --template-path=infracost.yml.tmpl --repo-path=. --out-file=.infracost.yml
+      # Run Infracost breakdown to estimate the costs and save it as JSON
+      - infracost breakdown --config-file=.infracost.yml --format json > {{.TMP_DIR}}/main.json
+
+  # Estimate the cost diff between the current branch and main
+  estimate:current-diff:
+    internal: true
+    cmds:
+      # Generate an Infracost config file for the current branch
+      # based on the infracost.yml.tmpl file
+      - infracost generate config --template-path=infracost.yml.tmpl --repo-path=. --out-file=.infracost.yml
+      # Run Infracost diff to compare the current branch costs to main
+      - infracost diff --config-file=.infracost.yml --compare-to={{.TMP_DIR}}/main.json
+
+  estimate:
+    cmds:
+      # Cleanup the temp directory before we run,
+      # but keep it around afterwards in case we need to debug the task
+      - cmd: rm -rf {{.TMP_DIR}}
+      - task: checkout-main
+      - task: estimate:main
+      - task: estimate:current-diff

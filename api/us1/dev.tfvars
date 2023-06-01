@@ -1,1 +1,1 @@
-api_instance_type = "t3.micro"
+api_instance_type = "t3.small"
